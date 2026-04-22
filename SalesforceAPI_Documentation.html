@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Salesforce REST API Architecture — Documentation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #0d0f12;
+  --bg2: #13161b;
+  --bg3: #1a1e26;
+  --border: #252a35;
+  --border2: #2e3545;
+  --text: #e2e6ef;
+  --text2: #8b93a8;
+  --text3: #555e72;
+  --coral: #e8634a;
+  --coral2: #ff8870;
+  --purple: #8b7ff5;
+  --purple2: #b3aaf9;
+  --teal: #2fbf8c;
+  --teal2: #5dd9a8;
+  --red: #e05555;
+  --amber: #e8a040;
+  --gray: #5a6278;
+  --accent: #e8634a;
+  --font: 'IBM Plex Sans', sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* ── Layout ── */
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 24px 0;
+}
+
+.sidebar-logo {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.sidebar-logo .badge {
+  display: inline-block;
+  background: var(--coral);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+}
+
+.sidebar-logo h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.nav-section {
+  padding: 0 20px;
+  margin-bottom: 20px;
+}
+
+.nav-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+
+.nav-link {
+  display: block;
+  font-size: 12px;
+  color: var(--text2);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 1px;
+  transition: all .15s;
+  border-left: 2px solid transparent;
+}
+.nav-link:hover { color: var(--text); background: var(--bg3); }
+.nav-link.active { color: var(--coral2); border-left-color: var(--coral); background: rgba(232,99,74,.07); }
+
+.main { flex: 1; padding: 48px 56px; max-width: 880px; }
+
+/* ── Sections ── */
+.section { margin-bottom: 64px; }
+
+.section-tag {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--coral);
+  margin-bottom: 10px;
+}
+
+h1 { font-size: 28px; font-weight: 600; color: var(--text); line-height: 1.2; margin-bottom: 12px; }
+h2 { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 16px; margin-top: 40px; }
+h3 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px; margin-top: 28px; }
+
+p { color: var(--text2); margin-bottom: 14px; font-size: 13.5px; }
+
+.lead { font-size: 15px; color: var(--text); font-weight: 300; line-height: 1.8; margin-bottom: 24px; }
+
+hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+
+/* ── Diagrams ── */
+.diagram-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 24px 0;
+}
+
+.diagram-header {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.diagram-header .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--coral);
+}
+
+.diagram-body { padding: 24px; }
+
+svg.arch { width: 100%; }
+
+/* ── Flow diagram tabs ── */
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+.tab {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 5px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all .15s;
+}
+.tab:hover { color: var(--text2); border-color: var(--border2); }
+.tab.on { background: var(--bg3); color: var(--text); border-color: var(--border2); }
+.tab.on.coral { color: var(--coral2); border-color: var(--coral); }
+.tab.on.purple { color: var(--purple2); border-color: var(--purple); }
+.tab.on.teal { color: var(--teal2); border-color: var(--teal); }
+.tab.on.red { color: #ff8080; border-color: var(--red); }
+
+.flow-panel { display: none; }
+.flow-panel.show { display: block; }
+
+/* ── File list ── */
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.file-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.file-card:hover { border-color: var(--border2); background: var(--bg3); }
+.file-card .fc-layer {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.file-card .fc-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--mono);
+  margin-bottom: 3px;
+}
+.file-card .fc-desc {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.layer-coral .fc-layer { color: var(--coral); }
+.layer-purple .fc-layer { color: var(--purple); }
+.layer-teal .fc-layer { color: var(--teal); }
+.layer-red .fc-layer { color: var(--red); }
+.layer-gray .fc-layer { color: var(--gray); }
+
+/* ── Code blocks ── */
+pre {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  margin: 14px 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: #c8d0e0;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--coral2);
+}
+
+pre code { background: none; border: none; padding: 0; color: inherit; }
+
+.kw { color: #c792ea; }
+.cn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: #546e7a; font-style: italic; }
+.nu { color: #f78c6c; }
+
+/* ── Tables ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 12.5px;
+}
+th {
+  text-align: left;
+  padding: 8px 14px;
+  background: var(--bg3);
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+tr:last-child td { border-bottom: none; }
+td code { font-size: 11px; }
+
+/* ── Status badges ── */
+.badge-200 { display:inline-block;background:rgba(47,191,140,.15);color:var(--teal2);padding:1px 8px;border-radius:3px;font-size:11px;font-family:var(--mono);font-weight:500; }
+.badge-400 { display:inline-block;background:rgba(232,160,64,.15);color:var(--amber);padding:1px 8px;border-radius:3px;font-size:11px;font-family:var(--mono);font-weight:500; }
+.badge-404 { display:inline-block;background:rgba(232,160,64,.15);color:var(--amber);padding:1px 8px;border-radius:3px;font-size:11px;font-family:var(--mono);font-weight:500; }
+.badge-422 { display:inline-block;background:rgba(232,160,64,.15);color:var(--amber);padding:1px 8px;border-radius:3px;font-size:11px;font-family:var(--mono);font-weight:500; }
+.badge-500 { display:inline-block;background:rgba(224,85,85,.15);color:#ff8080;padding:1px 8px;border-radius:3px;font-size:11px;font-family:var(--mono);font-weight:500; }
+
+/* ── Checklist ── */
+.checklist { list-style: none; margin: 12px 0; }
+.checklist li {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--text2);
+}
+.checklist li:last-child { border-bottom: none; }
+.check-box {
+  width: 16px; height: 16px; min-width: 16px;
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  margin-top: 2px;
+}
+
+/* ── Alert ── */
+.alert {
+  border-left: 3px solid var(--coral);
+  background: rgba(232,99,74,.06);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  margin: 16px 0;
+  font-size: 12.5px;
+  color: var(--text2);
+}
+.alert strong { color: var(--coral2); }
+
+/* ── SVG elements (inline diagrams) ── */
+.node-coral { fill: rgba(232,99,74,.12); stroke: var(--coral); }
+.node-purple { fill: rgba(139,127,245,.12); stroke: var(--purple); }
+.node-teal { fill: rgba(47,191,140,.12); stroke: var(--teal); }
+.node-red { fill: rgba(224,85,85,.12); stroke: var(--red); }
+.node-gray { fill: rgba(90,98,120,.12); stroke: var(--gray); }
+.node-amber { fill: rgba(232,160,64,.12); stroke: var(--amber); }
+
+text.lbl { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; font-weight: 600; fill: #e2e6ef; }
+text.sub { font-family: 'IBM Plex Sans', sans-serif; font-size: 10px; fill: #8b93a8; }
+text.tiny { font-family: 'IBM Plex Sans', sans-serif; font-size: 9px; fill: #555e72; letter-spacing: .06em; }
+line.arr { stroke: #2e3545; stroke-width: 1.5; }
+line.dash { stroke: #252a35; stroke-width: 1; stroke-dasharray: 5 3; }
+
+/* ── Print ── */
+@media print {
+  .sidebar { display: none; }
+  .main { padding: 24px; max-width: 100%; }
+  pre { font-size: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="badge">Salesforce</div>
+    <h2>REST API<br>Architecture</h2>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-link active" href="#overview">Introduction</a>
+    <a class="nav-link" href="#files">File inventory</a>
+    <a class="nav-link" href="#deploy">Deploy order</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Architecture</div>
+    <a class="nav-link" href="#diagram-overview">Structure diagram</a>
+    <a class="nav-link" href="#diagram-flow">Request flows</a>
+    <a class="nav-link" href="#diagram-error">Error path</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Layers</div>
+    <a class="nav-link" href="#layer-http">HTTP layer</a>
+    <a class="nav-link" href="#layer-framework">Framework layer</a>
+    <a class="nav-link" href="#layer-service">Service layer</a>
+    <a class="nav-link" href="#layer-data">Data layer</a>
+    <a class="nav-link" href="#layer-exceptions">Exceptions</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Reference</div>
+    <a class="nav-link" href="#contracts">API contracts</a>
+    <a class="nav-link" href="#errors">Error codes</a>
+    <a class="nav-link" href="#extending">Extending</a>
+    <a class="nav-link" href="#setup">Setup checklist</a>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <!-- Overview -->
+  <section class="section" id="overview">
+    <div class="section-tag">Documentation v1.0</div>
+    <h1>Salesforce REST API Architecture</h1>
+    <p class="lead">An enterprise-grade, extensible REST API framework built on Apex. Designed around a single abstract base class that handles HTTP routing, parameter parsing, logging, and error handling — so individual endpoints only need to implement business logic.</p>
+    <p>The architecture separates concerns into four layers: an HTTP layer (endpoint classes), a framework layer (BaseApi, RequestParams, ApiLogger, ErrorHandler), a service layer (business logic), and a data layer (fflib selectors). Cross-cutting concerns are inherited automatically by every endpoint that extends <code>BaseApi</code>.</p>
+  </section>
+
+  <!-- File inventory -->
+  <section class="section" id="files">
+    <div class="section-tag">All files</div>
+    <h2>File inventory</h2>
+    <p>17 Apex classes in total. Click any card below to jump to that layer's documentation.</p>
+
+    <div class="file-grid">
+      <a href="#layer-http" style="text-decoration:none">
+        <div class="file-card layer-coral">
+          <div class="fc-layer">HTTP layer</div>
+          <div class="fc-name">WS_VGP_CitiesApi</div>
+          <div class="fc-desc">Cities REST endpoint</div>
+        </div>
+      </a>
+      <a href="#layer-framework" style="text-decoration:none">
+        <div class="file-card layer-purple">
+          <div class="fc-layer">Framework</div>
+          <div class="fc-name">BaseApi</div>
+          <div class="fc-desc">Abstract base, request lifecycle</div>
+        </div>
+      </a>
+      <a href="#layer-framework" style="text-decoration:none">
+        <div class="file-card layer-purple">
+          <div class="fc-layer">Framework</div>
+          <div class="fc-name">RequestParams</div>
+          <div class="fc-desc">Parses GET params &amp; POST body</div>
+        </div>
+      </a>
+      <a href="#layer-framework" style="text-decoration:none">
+        <div class="file-card layer-purple">
+          <div class="fc-layer">Framework</div>
+          <div class="fc-name">ApiLogger</div>
+          <div class="fc-desc">Logs to API_Log__c</div>
+        </div>
+      </a>
+      <a href="#layer-framework" style="text-decoration:none">
+        <div class="file-card layer-purple">
+          <div class="fc-layer">Framework</div>
+          <div class="fc-name">ErrorHandler</div>
+          <div class="fc-desc">Maps exceptions to HTTP status</div>
+        </div>
+      </a>
+      <a href="#layer-exceptions" style="text-decoration:none">
+        <div class="file-card layer-red">
+          <div class="fc-layer">Exceptions</div>
+          <div class="fc-name">ApiException</div>
+          <div class="fc-desc">Base exception class</div>
+        </div>
+      </a>
+      <a href="#layer-exceptions" style="text-decoration:none">
+        <div class="file-card layer-red">
+          <div class="fc-layer">Exceptions</div>
+          <div class="fc-name">BadRequestException</div>
+          <div class="fc-desc">400 — bad input</div>
+        </div>
+      </a>
+      <a href="#layer-exceptions" style="text-decoration:none">
+        <div class="file-card layer-red">
+          <div class="fc-layer">Exceptions</div>
+          <div class="fc-name">NotFoundException</div>
+          <div class="fc-desc">404 — not found</div>
+        </div>
+      </a>
+      <a href="#layer-exceptions" style="text-decoration:none">
+        <div class="file-card layer-red">
+          <div class="fc-layer">Exceptions</div>
+          <div class="fc-name">ValidationException</div>
+          <div class="fc-desc">422 — field validation</div>
+        </div>
+      </a>
+      <a href="#layer-service" style="text-decoration:none">
+        <div class="file-card layer-teal">
+          <div class="fc-layer">Service</div>
+          <div class="fc-name">ICitiesService</div>
+          <div class="fc-desc">Service interface</div>
+        </div>
+      </a>
+      <a href="#layer-service" style="text-decoration:none">
+        <div class="file-card layer-teal">
+          <div class="fc-layer">Service</div>
+          <div class="fc-name">CitiesService</div>
+          <div class="fc-desc">getCities, createCities</div>
+        </div>
+      </a>
+      <a href="#layer-data" style="text-decoration:none">
+        <div class="file-card layer-teal">
+          <div class="fc-layer">Data</div>
+          <div class="fc-name">ICitySelector</div>
+          <div class="fc-desc">Selector interface</div>
+        </div>
+      </a>
+      <a href="#layer-data" style="text-decoration:none">
+        <div class="file-card layer-teal">
+          <div class="fc-layer">Data</div>
+          <div class="fc-name">CitySelector</div>
+          <div class="fc-desc">fflib SOQL selector</div>
+        </div>
+      </a>
+      <a href="#contracts" style="text-decoration:none">
+        <div class="file-card layer-gray">
+          <div class="fc-layer">DTOs</div>
+          <div class="fc-name">ResponseWrapper</div>
+          <div class="fc-desc">Paginated GET response</div>
+        </div>
+      </a>
+      <a href="#contracts" style="text-decoration:none">
+        <div class="file-card layer-gray">
+          <div class="fc-layer">DTOs</div>
+          <div class="fc-name">PaginationDTO</div>
+          <div class="fc-desc">Pagination metadata</div>
+        </div>
+      </a>
+      <a href="#contracts" style="text-decoration:none">
+        <div class="file-card layer-gray">
+          <div class="fc-layer">DTOs</div>
+          <div class="fc-name">BulkResponseWrapper</div>
+          <div class="fc-desc">POST bulk response</div>
+        </div>
+      </a>
+      <a href="#contracts" style="text-decoration:none">
+        <div class="file-card layer-gray">
+          <div class="fc-layer">DTOs</div>
+          <div class="fc-name">BulkResultDTO</div>
+          <div class="fc-desc">Per-item bulk result</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- Deploy order -->
+  <section class="section" id="deploy">
+    <div class="section-tag">Deployment</div>
+    <h2>Deploy order</h2>
+    <p>Apex compiles classes at deploy time. A class that references another class must be deployed <em>after</em> that class. Deploy in this exact sequence:</p>
+
+    <table>
+      <thead>
+        <tr><th>#</th><th>Class</th><th>Depends on</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td><code>ApiException</code></td><td>Salesforce built-in <code>Exception</code></td></tr>
+        <tr><td>2</td><td><code>BadRequestException</code></td><td><code>ApiException</code></td></tr>
+        <tr><td>3</td><td><code>NotFoundException</code></td><td><code>ApiException</code></td></tr>
+        <tr><td>4</td><td><code>ValidationException</code></td><td><code>ApiException</code></td></tr>
+        <tr><td>5</td><td><code>ErrorHandler</code></td><td>Exception classes</td></tr>
+        <tr><td>6</td><td><code>RequestParams</code></td><td><code>BadRequestException</code></td></tr>
+        <tr><td>7</td><td><code>ApiLogger</code></td><td><code>API_Log__c</code> custom object</td></tr>
+        <tr><td>8</td><td><code>PaginationDTO</code>, <code>ResponseWrapper</code></td><td>—</td></tr>
+        <tr><td>9</td><td><code>BulkResultDTO</code>, <code>BulkResponseWrapper</code></td><td>—</td></tr>
+        <tr><td>10</td><td><code>BaseApi</code></td><td>RequestParams, ErrorHandler, ApiLogger</td></tr>
+        <tr><td>11</td><td><code>ICitySelector</code>, <code>ICitiesService</code></td><td>ResponseWrapper, BulkResponseWrapper</td></tr>
+        <tr><td>12</td><td><code>CitySelector</code></td><td><code>ICitySelector</code>, fflib</td></tr>
+        <tr><td>13</td><td><code>CitiesService</code></td><td><code>ICitiesService</code>, <code>CitySelector</code>, <code>BulkResultDTO</code></td></tr>
+        <tr><td>14</td><td><code>WS_VGP_CitiesApi</code></td><td><code>BaseApi</code>, <code>CitiesService</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="alert">
+      <strong>Common compile error:</strong> If you see "Dependent class is invalid and needs recompilation", a class it depends on either doesn't exist in the org yet or has a different signature than expected. Check the deploy order above and ensure <code>BulkResponseWrapper</code> and <code>BulkResultDTO</code> are deployed before <code>CitiesService</code>.
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- Architecture diagram -->
+  <section class="section" id="diagram-overview">
+    <div class="section-tag">Visualization</div>
+    <h2>Structure diagram</h2>
+    <p>The left column is the main call chain — every request flows top to bottom. The right column shows the cross-cutting concerns that <code>BaseApi</code> uses on every request regardless of endpoint or HTTP method.</p>
+
+    <div class="diagram-card">
+      <div class="diagram-header"><span class="dot"></span>Architecture overview</div>
+      <div class="diagram-body">
+        <svg class="arch" viewBox="0 0 760 540">
+          <defs>
+            <marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#2e3545" stroke-width="1.5" stroke-linecap="round"/>
+            </marker>
+            <marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#252a35" stroke-width="1.5" stroke-linecap="round"/>
+            </marker>
+          </defs>
+
+          <!-- Column headers -->
+          <text class="tiny" x="160" y="18" text-anchor="middle">MAIN CALL CHAIN</text>
+          <text class="tiny" x="580" y="18" text-anchor="middle">CROSS-CUTTING CONCERNS</text>
+
+          <!-- HTTP request -->
+          <rect x="40" y="28" width="240" height="38" rx="6" class="node-gray" stroke-width="0.5"/>
+          <text class="lbl" x="160" y="52" text-anchor="middle">HTTP request</text>
+          <line x1="160" y1="66" x2="160" y2="84" class="arr" marker-end="url(#a1)"/>
+
+          <!-- WS_VGP_CitiesApi -->
+          <rect x="40" y="84" width="240" height="54" rx="6" class="node-coral" stroke-width="0.5"/>
+          <text class="lbl" x="160" y="106" text-anchor="middle">WS_VGP_CitiesApi</text>
+          <text class="sub" x="160" y="124" text-anchor="middle">Cities REST endpoint</text>
+          <line x1="160" y1="138" x2="160" y2="156" class="arr" marker-end="url(#a1)"/>
+
+          <!-- BaseApi -->
+          <rect x="40" y="156" width="240" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+          <text class="lbl" x="160" y="178" text-anchor="middle">BaseApi</text>
+          <text class="sub" x="160" y="196" text-anchor="middle">Routes GET and POST</text>
+          <line x1="160" y1="210" x2="160" y2="228" class="arr" marker-end="url(#a1)"/>
+
+          <!-- CitiesService -->
+          <rect x="40" y="228" width="240" height="54" rx="6" class="node-teal" stroke-width="0.5"/>
+          <text class="lbl" x="160" y="250" text-anchor="middle">CitiesService</text>
+          <text class="sub" x="160" y="268" text-anchor="middle">Business logic layer</text>
+          <line x1="160" y1="282" x2="160" y2="300" class="arr" marker-end="url(#a1)"/>
+
+          <!-- CitySelector -->
+          <rect x="40" y="300" width="240" height="54" rx="6" class="node-teal" stroke-width="0.5"/>
+          <text class="lbl" x="160" y="322" text-anchor="middle">CitySelector</text>
+          <text class="sub" x="160" y="340" text-anchor="middle">fflib SOQL layer</text>
+          <line x1="160" y1="354" x2="160" y2="372" class="arr" marker-end="url(#a1)"/>
+
+          <!-- City__c -->
+          <rect x="40" y="372" width="240" height="38" rx="6" class="node-gray" stroke-width="0.5"/>
+          <text class="lbl" x="160" y="396" text-anchor="middle">City__c SObject</text>
+
+          <!-- Dashed connector lines from BaseApi -->
+          <line x1="280" y1="183" x2="340" y2="183" class="dash" marker-end="url(#a2)"/>
+          <line x1="340" y1="168" x2="340" y2="450" class="dash"/>
+          <line x1="340" y1="183" x2="400" y2="183" class="dash" marker-end="url(#a2)"/>
+          <line x1="340" y1="267" x2="400" y2="267" class="dash" marker-end="url(#a2)"/>
+          <line x1="340" y1="420" x2="400" y2="420" class="dash" marker-end="url(#a2)"/>
+
+          <!-- RequestParams -->
+          <rect x="400" y="156" width="240" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+          <text class="lbl" x="520" y="178" text-anchor="middle">RequestParams</text>
+          <text class="sub" x="520" y="196" text-anchor="middle">Parses GET / POST body</text>
+
+          <!-- ApiLogger -->
+          <rect x="400" y="240" width="240" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+          <text class="lbl" x="520" y="262" text-anchor="middle">ApiLogger</text>
+          <text class="sub" x="520" y="280" text-anchor="middle">Logs all requests</text>
+          <line x1="520" y1="294" x2="520" y2="314" class="arr" marker-end="url(#a1)"/>
+
+          <!-- API_Log__c -->
+          <rect x="400" y="314" width="240" height="38" rx="6" class="node-gray" stroke-width="0.5"/>
+          <text class="lbl" x="520" y="338" text-anchor="middle">API_Log__c</text>
+
+          <!-- ErrorHandler -->
+          <rect x="400" y="393" width="240" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+          <text class="lbl" x="520" y="415" text-anchor="middle">ErrorHandler</text>
+          <text class="sub" x="520" y="433" text-anchor="middle">Maps to HTTP status</text>
+          <line x1="520" y1="447" x2="520" y2="467" class="arr" marker-end="url(#a1)"/>
+
+          <!-- ApiException -->
+          <rect x="400" y="467" width="240" height="54" rx="6" class="node-red" stroke-width="0.5"/>
+          <text class="lbl" x="520" y="489" text-anchor="middle">ApiException</text>
+          <text class="sub" x="520" y="507" text-anchor="middle">400 / 404 / 422 / 500</text>
+
+          <!-- Legend -->
+          <rect x="40" y="436" width="10" height="10" rx="2" class="node-coral" stroke-width="0.5"/>
+          <text class="tiny" x="56" y="446">HTTP layer</text>
+          <rect x="120" y="436" width="10" height="10" rx="2" class="node-purple" stroke-width="0.5"/>
+          <text class="tiny" x="136" y="446">Framework</text>
+          <rect x="210" y="436" width="10" height="10" rx="2" class="node-teal" stroke-width="0.5"/>
+          <text class="tiny" x="226" y="446">Service / Data</text>
+          <rect x="40" y="456" width="10" height="10" rx="2" class="node-red" stroke-width="0.5"/>
+          <text class="tiny" x="56" y="466">Exceptions</text>
+          <rect x="120" y="456" width="10" height="10" rx="2" class="node-gray" stroke-width="0.5"/>
+          <text class="tiny" x="136" y="466">Salesforce</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- Flow diagrams -->
+  <section class="section" id="diagram-flow">
+    <h2>Request flows</h2>
+    <p>Select a flow to trace the full path of that request type through the architecture.</p>
+
+    <div class="diagram-card">
+      <div class="diagram-header"><span class="dot"></span>Request lifecycle</div>
+      <div class="diagram-body">
+        <div class="tabs">
+          <button class="tab on coral" data-panel="pget">GET /cities</button>
+          <button class="tab" data-panel="ppost">POST /cities</button>
+        </div>
+
+        <!-- GET flow -->
+        <div class="flow-panel show" id="pget">
+          <svg class="arch" viewBox="0 0 680 460">
+            <defs>
+              <marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M2 1L8 5L2 9" fill="none" stroke="#2e3545" stroke-width="1.5" stroke-linecap="round"/>
+              </marker>
+            </defs>
+            <rect x="190" y="20" width="260" height="38" rx="6" class="node-gray" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="44" text-anchor="middle">GET /cities?page=1&amp;page_size=20</text>
+            <line x1="320" y1="58" x2="320" y2="76" class="arr" marker-end="url(#ag)"/>
+            <rect x="190" y="76" width="260" height="54" rx="6" class="node-coral" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="96" text-anchor="middle">WS_VGP_CitiesApi</text>
+            <text class="sub" x="320" y="114" text-anchor="middle">@HttpGet annotation triggers</text>
+            <line x1="320" y1="130" x2="320" y2="148" class="arr" marker-end="url(#ag)"/>
+            <rect x="190" y="148" width="260" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="168" text-anchor="middle">BaseApi.handleRequest()</text>
+            <text class="sub" x="320" y="186" text-anchor="middle">builds RequestParams, starts timer</text>
+            <line x1="320" y1="202" x2="320" y2="220" class="arr" marker-end="url(#ag)"/>
+            <rect x="190" y="220" width="260" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="240" text-anchor="middle">handleGet(params)</text>
+            <text class="sub" x="320" y="258" text-anchor="middle">reads page, page_size params</text>
+            <line x1="320" y1="274" x2="320" y2="292" class="arr" marker-end="url(#ag)"/>
+            <rect x="190" y="292" width="260" height="54" rx="6" class="node-teal" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="312" text-anchor="middle">CitiesService.getCities()</text>
+            <text class="sub" x="320" y="330" text-anchor="middle">COUNT + SELECT (2 SOQL)</text>
+            <line x1="320" y1="346" x2="320" y2="364" class="arr" marker-end="url(#ag)"/>
+            <rect x="190" y="364" width="260" height="38" rx="6" class="node-gray" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="388" text-anchor="middle">200 + ResponseWrapper JSON</text>
+            <!-- Logger side -->
+            <rect x="510" y="148" width="150" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+            <text class="lbl" x="585" y="168" text-anchor="middle">ApiLogger</text>
+            <text class="sub" x="585" y="186" text-anchor="middle">finally block</text>
+            <line x1="450" y1="175" x2="508" y2="175" class="dash" marker-end="url(#ag)"/>
+          </svg>
+        </div>
+
+        <!-- POST flow -->
+        <div class="flow-panel" id="ppost">
+          <svg class="arch" viewBox="0 0 680 460">
+            <defs>
+              <marker id="ap" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M2 1L8 5L2 9" fill="none" stroke="#2e3545" stroke-width="1.5" stroke-linecap="round"/>
+              </marker>
+            </defs>
+            <rect x="190" y="20" width="260" height="38" rx="6" class="node-gray" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="44" text-anchor="middle">POST /cities (JSON body)</text>
+            <line x1="320" y1="58" x2="320" y2="76" class="arr" marker-end="url(#ap)"/>
+            <rect x="190" y="76" width="260" height="54" rx="6" class="node-coral" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="96" text-anchor="middle">WS_VGP_CitiesApi</text>
+            <text class="sub" x="320" y="114" text-anchor="middle">@HttpPost annotation triggers</text>
+            <line x1="320" y1="130" x2="320" y2="148" class="arr" marker-end="url(#ap)"/>
+            <rect x="190" y="148" width="260" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="168" text-anchor="middle">BaseApi.handleRequest()</text>
+            <text class="sub" x="320" y="186" text-anchor="middle">deserializes JSON body</text>
+            <line x1="320" y1="202" x2="320" y2="220" class="arr" marker-end="url(#ap)"/>
+            <rect x="190" y="220" width="260" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="240" text-anchor="middle">handlePost(params)</text>
+            <text class="sub" x="320" y="258" text-anchor="middle">reads cities array from body</text>
+            <line x1="320" y1="274" x2="320" y2="292" class="arr" marker-end="url(#ap)"/>
+            <rect x="190" y="292" width="260" height="54" rx="6" class="node-teal" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="312" text-anchor="middle">CitiesService.createCities()</text>
+            <text class="sub" x="320" y="330" text-anchor="middle">validate + Database.insert(false)</text>
+            <line x1="320" y1="346" x2="320" y2="364" class="arr" marker-end="url(#ap)"/>
+            <rect x="190" y="364" width="260" height="38" rx="6" class="node-gray" stroke-width="0.5"/>
+            <text class="lbl" x="320" y="388" text-anchor="middle">200 + BulkResponseWrapper JSON</text>
+            <!-- Logger side -->
+            <rect x="510" y="148" width="150" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+            <text class="lbl" x="585" y="168" text-anchor="middle">ApiLogger</text>
+            <text class="sub" x="585" y="186" text-anchor="middle">finally block</text>
+            <line x1="450" y1="175" x2="508" y2="175" class="dash" marker-end="url(#ap)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Error path -->
+  <section class="section" id="diagram-error">
+    <h2>Error path</h2>
+    <p>Any exception thrown anywhere in the call chain bubbles up to the <code>catch</code> block in <code>BaseApi.handleRequest()</code>. The logging <code>finally</code> block always runs — even on errors — so every request is recorded regardless of outcome.</p>
+
+    <div class="diagram-card">
+      <div class="diagram-header"><span class="dot" style="background:var(--red)"></span>Error lifecycle</div>
+      <div class="diagram-body">
+        <svg class="arch" viewBox="0 0 680 400">
+          <defs>
+            <marker id="ae" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#2e3545" stroke-width="1.5" stroke-linecap="round"/>
+            </marker>
+          </defs>
+          <rect x="190" y="20" width="260" height="38" rx="6" class="node-gray" stroke-width="0.5"/>
+          <text class="lbl" x="320" y="44" text-anchor="middle">Exception thrown anywhere</text>
+          <line x1="320" y1="58" x2="320" y2="76" class="arr" marker-end="url(#ae)"/>
+          <rect x="190" y="76" width="260" height="54" rx="6" class="node-red" stroke-width="0.5"/>
+          <text class="lbl" x="320" y="96" text-anchor="middle">ApiException subclass</text>
+          <text class="sub" x="320" y="114" text-anchor="middle">Bad/Not found/Validation or unknown</text>
+          <line x1="320" y1="130" x2="320" y2="148" class="arr" marker-end="url(#ae)"/>
+          <rect x="190" y="148" width="260" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+          <text class="lbl" x="320" y="168" text-anchor="middle">ErrorHandler</text>
+          <text class="sub" x="320" y="186" text-anchor="middle">resolves HTTP status code</text>
+          <line x1="320" y1="202" x2="320" y2="220" class="arr" marker-end="url(#ae)"/>
+          <rect x="190" y="220" width="260" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+          <text class="lbl" x="320" y="240" text-anchor="middle">BaseApi catch block</text>
+          <text class="sub" x="320" y="258" text-anchor="middle">serializes error JSON body</text>
+          <line x1="320" y1="274" x2="320" y2="292" class="arr" marker-end="url(#ae)"/>
+          <rect x="190" y="292" width="260" height="54" rx="6" class="node-purple" stroke-width="0.5"/>
+          <text class="lbl" x="320" y="312" text-anchor="middle">ApiLogger.flush()</text>
+          <text class="sub" x="320" y="330" text-anchor="middle">always runs in finally</text>
+          <line x1="320" y1="346" x2="320" y2="364" class="arr" marker-end="url(#ae)"/>
+          <rect x="190" y="364" width="260" height="38" rx="6" class="node-gray" stroke-width="0.5"/>
+          <text class="lbl" x="320" y="388" text-anchor="middle">4xx / 500 + error JSON</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- HTTP Layer -->
+  <section class="section" id="layer-http">
+    <div class="section-tag">HTTP layer</div>
+    <h2>WS_VGP_CitiesApi.cls</h2>
+    <p>The only class with Salesforce REST annotations. It registers the <code>/cities</code> URL mapping and declares two static methods — one for GET, one for POST. Both do nothing but instantiate the class and call <code>handleRequest()</code>. All logic lives in the layers below.</p>
+
+    <h3>Why two static methods calling the same thing?</h3>
+    <p>Salesforce requires a separate static method per HTTP verb with the matching annotation (<code>@HttpGet</code>, <code>@HttpPost</code>). This is purely a platform constraint. The routing logic inside <code>handleRequest()</code> then reads <code>req.httpMethod</code> to decide which path to take.</p>
+
+    <pre><code><span class="kw">@RestResource</span>(urlMapping=<span class="st">'/cities'</span>)
+<span class="kw">global with sharing class</span> <span class="cn">WS_VGP_CitiesApi</span> <span class="kw">extends</span> <span class="cn">BaseApi</span> {
+
+    <span class="kw">global override</span> Object <span class="cn">handleGet</span>(<span class="cn">RequestParams</span> params) {
+        Integer page     = params.getInteger(<span class="st">'page'</span>, <span class="nu">1</span>);
+        Integer pageSize = params.getInteger(<span class="st">'page_size'</span>, <span class="nu">20</span>);
+        <span class="kw">return</span> ((<span class="cn">ICitiesService</span>) <span class="kw">new</span> <span class="cn">CitiesService</span>()).getCities(page, pageSize);
+    }
+
+    <span class="kw">global override</span> Object <span class="cn">handlePost</span>(<span class="cn">RequestParams</span> params) {
+        List&lt;Object&gt; items = params.getList(<span class="st">'cities'</span>);
+        <span class="kw">if</span> (items.isEmpty()) <span class="kw">throw new</span> <span class="cn">BadRequestException</span>(<span class="st">'cities array is required'</span>);
+        <span class="kw">return</span> ((<span class="cn">ICitiesService</span>) <span class="kw">new</span> <span class="cn">CitiesService</span>()).createCities(items);
+    }
+
+    <span class="kw">@HttpGet</span>
+    <span class="kw">global static void</span> getCities()     { <span class="kw">new</span> <span class="cn">WS_VGP_CitiesApi</span>().handleRequest(); }
+
+    <span class="kw">@HttpPost</span>
+    <span class="kw">global static void</span> createCities()  { <span class="kw">new</span> <span class="cn">WS_VGP_CitiesApi</span>().handleRequest(); }
+}</code></pre>
+  </section>
+
+  <!-- Framework Layer -->
+  <section class="section" id="layer-framework">
+    <div class="section-tag">Framework layer</div>
+    <h2>BaseApi.cls</h2>
+    <p>The single entry point for all requests. Owns the complete request lifecycle: timing, param parsing, HTTP method routing, response serialization, error catching, and guaranteed logging via <code>finally</code>. Subclasses only override <code>handleGet()</code> and/or <code>handlePost()</code>.</p>
+
+    <pre><code><span class="kw">global abstract class</span> <span class="cn">BaseApi</span> {
+    <span class="kw">global void</span> handleRequest() {
+        Long startTime = System.currentTimeMillis();
+        <span class="cm">// ... builds logDto, creates RequestParams ...</span>
+        <span class="kw">try</span> {
+            <span class="kw">if</span>      (req.httpMethod == <span class="st">'GET'</span>)  response = handleGet(params);
+            <span class="kw">else if</span> (req.httpMethod == <span class="st">'POST'</span>) response = handlePost(params);
+            <span class="kw">else throw new</span> <span class="cn">BadRequestException</span>(<span class="st">'Unsupported method'</span>);
+        } <span class="kw">catch</span> (Exception e) {
+            <span class="cm">// sets error status + body via ErrorHandler</span>
+        } <span class="kw">finally</span> {
+            logDto.durationMs = System.currentTimeMillis() - startTime;
+            <span class="cn">ApiLogger</span>.log(logDto);
+            <span class="cn">ApiLogger</span>.flush(); <span class="cm">// always runs</span>
+        }
+    }
+    <span class="kw">global virtual</span> Object handleGet(<span class="cn">RequestParams</span> p)  { <span class="kw">throw new</span> <span class="cn">BadRequestException</span>(<span class="st">'GET not supported'</span>); }
+    <span class="kw">global virtual</span> Object handlePost(<span class="cn">RequestParams</span> p) { <span class="kw">throw new</span> <span class="cn">BadRequestException</span>(<span class="st">'POST not supported'</span>); }
+}</code></pre>
+
+    <h2>RequestParams.cls</h2>
+    <p>Abstracts parameter reading from both GET query strings and POST JSON bodies behind a single typed interface. Automatically throws <code>BadRequestException</code> for type mismatches (e.g. passing <code>"abc"</code> to <code>getInteger()</code>).</p>
+
+    <table>
+      <thead><tr><th>Method</th><th>Source (GET)</th><th>Source (POST)</th><th>On missing key</th></tr></thead>
+      <tbody>
+        <tr><td><code>getString(key, default)</code></td><td>Query param</td><td>Body field</td><td>Returns default</td></tr>
+        <tr><td><code>getInteger(key, default)</code></td><td>Query param</td><td>Body field</td><td>Returns default</td></tr>
+        <tr><td><code>getBoolean(key, default)</code></td><td>Query param</td><td>Body field</td><td>Returns default</td></tr>
+        <tr><td><code>getList(key)</code></td><td>—</td><td>Body array</td><td>Empty list</td></tr>
+        <tr><td><code>getBody()</code></td><td>—</td><td>Full body map</td><td>Empty map</td></tr>
+      </tbody>
+    </table>
+
+    <h2>ApiLogger.cls</h2>
+    <p>Buffers log records in a static list during the request, then inserts them all in a single DML call in the <code>finally</code> block. This keeps DML out of the hot path and ensures logging never counts against governor limits mid-request. Log insertion failures are caught and written to debug logs, so a logging failure never breaks the API response.</p>
+
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>What it captures</th></tr></thead>
+      <tbody>
+        <tr><td><code>Endpoint__c</code></td><td>Text 255</td><td>Request URI</td></tr>
+        <tr><td><code>HTTP_Method__c</code></td><td>Text 10</td><td>GET / POST</td></tr>
+        <tr><td><code>Request_Body__c</code></td><td>Long Text</td><td>Raw request body (truncated at 32 KB)</td></tr>
+        <tr><td><code>Status_Code__c</code></td><td>Number</td><td>200 / 400 / 404 / 422 / 500</td></tr>
+        <tr><td><code>Response_Body__c</code></td><td>Long Text</td><td>Serialized response (truncated at 32 KB)</td></tr>
+        <tr><td><code>User__c</code></td><td>Lookup → User</td><td>UserInfo.getUserId()</td></tr>
+        <tr><td><code>Duration_Ms__c</code></td><td>Number</td><td>End-to-end request duration in milliseconds</td></tr>
+        <tr><td><code>Error_Message__c</code></td><td>Long Text</td><td>Exception message (null on success)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>ErrorHandler.cls</h2>
+    <p>A pure utility class. Takes any exception and returns the correct HTTP status code plus a structured error body. No state, no DML — just a mapping function.</p>
+  </section>
+
+  <!-- Service Layer -->
+  <section class="section" id="layer-service">
+    <div class="section-tag">Service layer</div>
+    <h2>CitiesService.cls</h2>
+    <p>Implements <code>ICitiesService</code>. Contains the two core business operations:</p>
+
+    <h3>getCities(page, pageSize)</h3>
+    <p>Paginates <code>City__c</code> records. Clamps <code>page</code> to minimum 1 and <code>pageSize</code> between 1 and 100. Runs two SOQL queries: one <code>COUNT()</code> for total records, one <code>SELECT</code> with <code>LIMIT</code> and <code>OFFSET</code>. Returns a <code>ResponseWrapper</code> containing the DTO list and a <code>PaginationDTO</code>.</p>
+
+    <h3>createCities(items)</h3>
+    <p>Validates each item individually first (name and governorate_sf_id required), then calls <code>Database.insert(list, false)</code> for partial success — meaning one invalid record does not roll back the others. Returns a <code>BulkResponseWrapper</code> showing the result per item index.</p>
+  </section>
+
+  <!-- Data Layer -->
+  <section class="section" id="layer-data">
+    <div class="section-tag">Data layer</div>
+    <h2>CitySelector.cls</h2>
+    <p>Extends <code>fflib_SObjectSelector</code> and implements <code>ICitySelector</code>. Uses the fflib Application factory (<code>Application.Selector.newInstance()</code>) for testability — the selector can be mocked in unit tests by registering a mock binding in the Application factory, avoiding real SOQL queries entirely during tests.</p>
+
+    <div class="alert">
+      <strong>Known inconsistency:</strong> <code>getSObjectFieldList()</code> declares <code>City_A__c</code> but the manual SOQL queries use <code>Name</code> and <code>Governorates__c</code>. These should be aligned — either use the fflib query builder (<code>newQueryFactory()</code>) consistently, or add all queried fields to <code>getSObjectFieldList()</code>. Also, <code>CitySelector</code> is <code>without sharing</code>, while the service and API classes are <code>with sharing</code> — data queried here will not respect record visibility rules.
+    </div>
+  </section>
+
+  <!-- Exceptions -->
+  <section class="section" id="layer-exceptions">
+    <div class="section-tag">Exceptions</div>
+    <h2>Exception hierarchy</h2>
+    <p>All exceptions extend Salesforce's built-in <code>Exception</code> base class, which provides <code>getMessage()</code>, <code>getTypeName()</code>, and <code>getStackTraceString()</code> for free. The middle <code>ApiException</code> layer lets you catch all controlled API errors in one place while keeping unexpected system errors separate.</p>
+
+    <pre><code>Salesforce built-in Exception    (platform — always available)
+         ↑
+    ApiException                 (your base — catch all API errors at once)
+         ↑
+  BadRequestException            (400 — bad input, wrong type, missing param)
+  NotFoundException              (404 — record not found)
+  ValidationException            (422 — field-level validation failure)</code></pre>
+
+    <table>
+      <thead><tr><th>Class</th><th>HTTP</th><th>When to throw</th></tr></thead>
+      <tbody>
+        <tr><td><code>BadRequestException</code></td><td><span class="badge-400">400</span></td><td>Missing required param, wrong type, unsupported method, empty required array</td></tr>
+        <tr><td><code>NotFoundException</code></td><td><span class="badge-404">404</span></td><td>Queried record does not exist</td></tr>
+        <tr><td><code>ValidationException</code></td><td><span class="badge-422">422</span></td><td>Field-level validation — blank name, invalid foreign key, business rule violation</td></tr>
+        <tr><td>Anything else</td><td><span class="badge-500">500</span></td><td>Unhandled system exception — DML errors, null pointers, etc.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr/>
+
+  <!-- API Contracts -->
+  <section class="section" id="contracts">
+    <div class="section-tag">Reference</div>
+    <h2>API contracts</h2>
+
+    <h3>GET /cities</h3>
+    <table>
+      <thead><tr><th>Param</th><th>Type</th><th>Default</th><th>Max</th></tr></thead>
+      <tbody>
+        <tr><td><code>page</code></td><td>Integer</td><td>1</td><td>—</td></tr>
+        <tr><td><code>page_size</code></td><td>Integer</td><td>20</td><td>100</td></tr>
+      </tbody>
+    </table>
+
+    <pre><code><span class="cm">// Response — 200</span>
+{
+  <span class="st">"data"</span>: [
+    { <span class="st">"sf_id"</span>: <span class="st">"a01..."</span>, <span class="st">"name"</span>: <span class="st">"Cairo"</span>, <span class="st">"governorate_sf_id"</span>: <span class="st">"a02..."</span> }
+  ],
+  <span class="st">"pagination"</span>: {
+    <span class="st">"page"</span>: <span class="nu">1</span>, <span class="st">"page_size"</span>: <span class="nu">20</span>,
+    <span class="st">"total_items"</span>: <span class="nu">142</span>, <span class="st">"total_pages"</span>: <span class="nu">8</span>
+  }
+}</code></pre>
+
+    <h3>POST /cities</h3>
+    <pre><code><span class="cm">// Request body</span>
+{
+  <span class="st">"cities"</span>: [
+    { <span class="st">"name"</span>: <span class="st">"Alexandria"</span>, <span class="st">"governorate_sf_id"</span>: <span class="st">"a01..."</span> },
+    { <span class="st">"name"</span>: <span class="st">""</span>,            <span class="st">"governorate_sf_id"</span>: <span class="st">"a01..."</span> }
+  ]
+}
+
+<span class="cm">// Response — 200 (partial success is still 200)</span>
+{
+  <span class="st">"results"</span>: [
+    { <span class="st">"index"</span>: <span class="nu">0</span>, <span class="st">"success"</span>: <span class="kw">true</span>,  <span class="st">"data"</span>: <span class="st">"a02..."</span>, <span class="st">"error"</span>: <span class="kw">null</span> },
+    { <span class="st">"index"</span>: <span class="nu">1</span>, <span class="st">"success"</span>: <span class="kw">false</span>, <span class="st">"data"</span>: <span class="kw">null</span>,    <span class="st">"error"</span>: <span class="st">"name is required"</span> }
+  ],
+  <span class="st">"successCount"</span>: <span class="nu">1</span>,
+  <span class="st">"failureCount"</span>: <span class="nu">1</span>
+}</code></pre>
+
+    <h3>Error response (any method)</h3>
+    <pre><code>{
+  <span class="st">"error"</span>: <span class="kw">true</span>,
+  <span class="st">"status"</span>: <span class="nu">422</span>,
+  <span class="st">"message"</span>: <span class="st">"name is required"</span>,
+  <span class="st">"type"</span>: <span class="st">"ValidationException"</span>
+}</code></pre>
+  </section>
+
+  <!-- Error codes -->
+  <section class="section" id="errors">
+    <div class="section-tag">Reference</div>
+    <h2>Error codes</h2>
+    <table>
+      <thead><tr><th>Status</th><th>Exception class</th><th>Common causes</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge-400">400</span></td><td><code>BadRequestException</code></td><td>Missing param, wrong type, empty array, unsupported HTTP method</td></tr>
+        <tr><td><span class="badge-404">404</span></td><td><code>NotFoundException</code></td><td>Record queried by ID does not exist</td></tr>
+        <tr><td><span class="badge-422">422</span></td><td><code>ValidationException</code></td><td>Blank name, invalid foreign key, failed business rule</td></tr>
+        <tr><td><span class="badge-500">500</span></td><td>Any other exception</td><td>Unexpected DML error, null pointer, query exception</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Extending -->
+  <section class="section" id="extending">
+    <div class="section-tag">Reference</div>
+    <h2>Adding a new endpoint</h2>
+    <p>To add <code>/governorates</code>, you only need 3 new files. Logging, error handling, and param parsing are all inherited from <code>BaseApi</code> automatically.</p>
+
+    <pre><code><span class="cm">// 1. Service interface</span>
+<span class="kw">global interface</span> <span class="cn">IGovernoratesService</span> {
+    <span class="cn">ResponseWrapper</span> getGovernorates(Integer page, Integer pageSize);
+}
+
+<span class="cm">// 2. Service implementation (same pattern as CitiesService)</span>
+<span class="kw">global with sharing class</span> <span class="cn">GovernoratesService</span> <span class="kw">implements</span> <span class="cn">IGovernoratesService</span> { ... }
+
+<span class="cm">// 3. Endpoint — inherits everything from BaseApi</span>
+<span class="kw">@RestResource</span>(urlMapping=<span class="st">'/governorates'</span>)
+<span class="kw">global with sharing class</span> <span class="cn">WS_GovernoratesApi</span> <span class="kw">extends</span> <span class="cn">BaseApi</span> {
+
+    <span class="kw">global override</span> Object handleGet(<span class="cn">RequestParams</span> params) {
+        Integer page     = params.getInteger(<span class="st">'page'</span>, <span class="nu">1</span>);
+        Integer pageSize = params.getInteger(<span class="st">'page_size'</span>, <span class="nu">20</span>);
+        <span class="kw">return new</span> <span class="cn">GovernoratesService</span>().getGovernorates(page, pageSize);
+    }
+
+    <span class="kw">@HttpGet</span>
+    <span class="kw">global static void</span> getGovernorates() { <span class="kw">new</span> <span class="cn">WS_GovernoratesApi</span>().handleRequest(); }
+}</code></pre>
+  </section>
+
+  <!-- Setup checklist -->
+  <section class="section" id="setup">
+    <div class="section-tag">Reference</div>
+    <h2>Setup checklist</h2>
+
+    <ul class="checklist">
+      <li><span class="check-box"></span>Create <code>API_Log__c</code> custom object with 8 fields: Endpoint__c, HTTP_Method__c, Request_Body__c, Status_Code__c, Response_Body__c, User__c (Lookup→User), Duration_Ms__c, Error_Message__c</li>
+      <li><span class="check-box"></span>Grant Create permission on <code>API_Log__c</code> to the integration user profile</li>
+      <li><span class="check-box"></span>Register <code>City__c.SObjectType</code> in the <code>Application.Selector</code> binding map (required for <code>CitySelector.newInstance()</code>)</li>
+      <li><span class="check-box"></span>Deploy all 17 classes in the order listed in the Deploy Order section</li>
+      <li><span class="check-box"></span>Verify <code>BulkResponseWrapper</code> and <code>BulkResultDTO</code> exist in the org before deploying <code>CitiesService</code></li>
+      <li><span class="check-box"></span>Ensure fflib library classes (<code>fflib_SObjectSelector</code>, <code>fflib_ISObjectSelector</code>) are installed</li>
+      <li><span class="check-box"></span>Assign the Remote Site Setting or Connected App permissions for external callers</li>
+    </ul>
+  </section>
+
+</main>
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var parent = btn.closest('.diagram-body');
+    parent.querySelectorAll('.tab').forEach(function(t) {
+      t.classList.remove('on','coral','purple','teal','red');
+    });
+    parent.querySelectorAll('.flow-panel').forEach(function(p) {
+      p.classList.remove('show');
+    });
+    btn.classList.add('on');
+    var color = btn.dataset.panel === 'pget' ? 'coral' : 'purple';
+    btn.classList.add(color);
+    document.getElementById(btn.dataset.panel).classList.add('show');
+  });
+});
+
+var links = document.querySelectorAll('.nav-link');
+var sections = document.querySelectorAll('section[id]');
+window.addEventListener('scroll', function() {
+  var scrollY = window.scrollY + 100;
+  sections.forEach(function(s) {
+    if (s.offsetTop <= scrollY && s.offsetTop + s.offsetHeight > scrollY) {
+      links.forEach(function(l) { l.classList.remove('active'); });
+      var match = document.querySelector('.nav-link[href="#' + s.id + '"]');
+      if (match) match.classList.add('active');
+    }
+  });
+});
+</script>
+
+</body>
+</html>
